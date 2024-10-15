@@ -1,21 +1,108 @@
 services:
-  eventstore.db:
-    image: eventstore/eventstore
-    environment:
-      - EVENTSTORE_CLUSTER_SIZE=1
-      - EVENTSTORE_RUN_PROJECTIONS=All
-      - EVENTSTORE_START_STANDARD_PROJECTIONS=True
-      - EVENTSTORE_DB=/var/lib/eventstore-data
-      - EVENTSTORE_INDEX=/var/lib/eventstore-index
-      - EVENTSTORE_LOG=/var/log/eventstore
-      - EVENTSTORE_REPLICATION_PORT=1113
-      - EVENTSTORE_HTTP_PORT=2113
-      - EVENTSTORE_INSECURE=True
-    ports:
-      - "1113:1113"
-      - "2113:2113"
+  setup:
+    image: eventstore/es-gencert-cli:1.0.2
+    entrypoint: bash
+    user: "root"
+    command: >
+      -c "cd /certs
+      && es-gencert-cli create-ca
+      && es-gencert-cli create-node -out ./node1 -ip-addresses 127.0.0.1,172.30.240.11 -dns-names localhost
+      && es-gencert-cli create-node -out ./node2 -ip-addresses 127.0.0.1,172.30.240.12 -dns-names localhost
+      && es-gencert-cli create-node -out ./node3 -ip-addresses 127.0.0.1,172.30.240.13 -dns-names localhost
+      && find . -type f -print0 | xargs -0 chmod 666"
+    container_name: setup
     volumes:
-        - ./eventstore-volume-data:/var/lib/eventstore-data
-        - ./eventstore-volume-index:/var/lib/eventstore-index
-        - ./eventstore-volume-logs:/var/log/eventstore
-        - ./plugins:/usr/share/eventstore/plugins
+      - ./certs:/certs
+
+  node1.eventstore: &template
+    image: eventstore/eventstore:latest
+    container_name: node1.eventstore
+    env_file:
+      - vars.env
+    environment:
+      - EVENTSTORE_INT_IP=172.30.240.11
+      - EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS=2111
+      - EVENTSTORE_GOSSIP_SEED=172.30.240.12:2113,172.30.240.13:2113
+      - EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH=/certs/ca
+      - EVENTSTORE_CERTIFICATE_FILE=/certs/node1/node.crt
+      - EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE=/certs/node1/node.key
+      - EVENTSTORE_DISABLE_LOG_FILE=true
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --fail --insecure https://node1.eventstore:2113/health/live || exit 1",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+    ports:
+      - 2111:2113
+    volumes:
+      - ./certs:/certs
+    depends_on:
+      - setup
+    networks:
+      clusternetwork:
+        ipv4_address: 172.30.240.11
+
+  node2.eventstore:
+    <<: *template
+    container_name: node2.eventstore
+    env_file:
+      - vars.env
+    environment:
+      - EVENTSTORE_INT_IP=172.30.240.12
+      - EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS=2112
+      - EVENTSTORE_GOSSIP_SEED=172.30.240.11:2113,172.30.240.13:2113
+      - EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH=/certs/ca
+      - EVENTSTORE_CERTIFICATE_FILE=/certs/node2/node.crt
+      - EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE=/certs/node2/node.key
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --fail --insecure https://node2.eventstore:2113/health/live || exit 1",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+    ports:
+      - 2112:2113
+    networks:
+      clusternetwork:
+        ipv4_address: 172.30.240.12
+
+  node3.eventstore:
+    <<: *template
+    container_name: node3.eventstore
+    environment:
+      - EVENTSTORE_INT_IP=172.30.240.13
+      - EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS=2113
+      - EVENTSTORE_GOSSIP_SEED=172.30.240.11:2113,172.30.240.12:2113
+      - EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH=/certs/ca
+      - EVENTSTORE_CERTIFICATE_FILE=/certs/node3/node.crt
+      - EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE=/certs/node3/node.key
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --fail --insecure https://node3.eventstore:2113/health/live || exit 1",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+    ports:
+      - 2113:2113
+    networks:
+      clusternetwork:
+        ipv4_address: 172.30.240.13
+
+networks:
+  clusternetwork:
+    name: eventstoredb.local
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.30.240.0/24
