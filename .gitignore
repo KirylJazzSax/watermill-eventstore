@@ -2,3 +2,4 @@ eventstore-volume-index
 eventstore-volume-data
 eventstore-volume-logs
 plugins
+.vscode
