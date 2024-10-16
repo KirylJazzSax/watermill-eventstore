@@ -43,7 +43,7 @@ func createPubSub(t *testing.T) (message.Publisher, message.Subscriber) {
 	return pub, sub
 }
 
-func Test_pubsub(t *testing.T) {
+func TestPubSub(t *testing.T) {
 	tests.TestPubSub(
 		t,
 		tests.Features{
