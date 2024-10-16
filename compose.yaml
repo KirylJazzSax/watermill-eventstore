@@ -10,7 +10,8 @@ services:
       - EVENTSTORE_LOG=/var/log/eventstore
       - EVENTSTORE_REPLICATION_PORT=1113
       - EVENTSTORE_HTTP_PORT=2113
-      - EVENTSTORE_INSECURE=True
+      - EVENTSTORE_KEEP_ALIVE_TIMEOUT=60000
+      - EVENTSTORE_INSECURE=true
     ports:
       - "1113:1113"
       - "2113:2113"
