@@ -11,11 +11,11 @@ import (
 )
 
 func createPubSub(t *testing.T) (message.Publisher, message.Subscriber) {
-	connectionString := "esdb+discover://localhost:2113?tls=false"
+	connectionString := "esdb+discover://0.0.0.0:2113?tls=false"
 	marshaler := wesdb.DefaultMarshaler{}
 
 	pub, err := wesdb.NewPublisher(wesdb.PublisherConfig{
-		ConnectionString: "esdb+discover://localhost:2113?tls=false",
+		ConnectionString: connectionString,
 		Marshaler:        marshaler,
 		StreamConfig: wesdb.PublishStreamConfig{
 			Options: esdb.AppendToStreamOptions{},
