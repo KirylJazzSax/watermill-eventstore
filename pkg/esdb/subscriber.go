@@ -145,9 +145,19 @@ func (s *Subscriber) handlePersistentSubscription(ctx context.Context, topic str
 					continue
 				}
 				if success := s.sendMessage(ctx, m, out); success {
-					stream.Ack(event)
+					err := stream.Ack(event)
+					if err != nil {
+						s.logger.Error("couldn't acc message", err, watermill.LogFields{
+							"event": event,
+						})
+					}
 				} else {
-					stream.Nack(fmt.Sprintf("nack event %s", m.UUID), esdb.NackActionSkip, event)
+					err := stream.Nack(fmt.Sprintf("nack event %s", m.UUID), esdb.NackActionSkip, event)
+					if err != nil {
+						s.logger.Error("couldn't nack message", err, watermill.LogFields{
+							"event": event,
+						})
+					}
 				}
 			}
 		}
