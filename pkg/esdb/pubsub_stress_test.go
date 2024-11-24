@@ -14,16 +14,28 @@ func TestPubSubStress(t *testing.T) {
 	tests.TestPubSubStressTest(
 		t,
 		tests.Features{
-			// TODO: implement consumer groups
-			ConsumerGroups: false,
-			// maybe its possible with persistent subscriptions
+			ConsumerGroups:                      false,
 			ExactlyOnceDelivery:                 false,
 			GuaranteedOrder:                     true,
 			GuaranteedOrderWithSingleSubscriber: true,
-			// TODO: implement with persistent
-			Persistent: false,
+			Persistent:                          false,
 		},
 		createPubSub,
 		func(t *testing.T, consumerGroup string) (message.Publisher, message.Subscriber) { return nil, nil },
+	)
+}
+
+func TestPubSubStressPersistentAndConsumerGroups(t *testing.T) {
+	tests.TestPubSubStressTest(
+		t,
+		tests.Features{
+			ConsumerGroups:                      false,
+			ExactlyOnceDelivery:                 false,
+			GuaranteedOrder:                     true,
+			GuaranteedOrderWithSingleSubscriber: true,
+			Persistent:                          false,
+		},
+		createPubSub,
+		consumerGroupPubSubConstructor,
 	)
 }
