@@ -1,15 +1,15 @@
-module watermill-eventstore
+module github.com/KirylJazzSax/watermill-eventstore
 
 go 1.23.1
 
 require (
 	github.com/EventStore/EventStore-Client-Go/v4 v4.1.0
 	github.com/ThreeDotsLabs/watermill v1.4.1
+	github.com/google/uuid v1.6.0
 )
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/kr/pretty v0.3.1 // indirect

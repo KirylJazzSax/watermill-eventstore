@@ -2,7 +2,8 @@ package esdb_test
 
 import (
 	"testing"
-	wesdb "watermill-eventstore/pkg/esdb"
+
+	wesdb "github.com/KirylJazzSax/watermill-eventstore/pkg/esdb"
 
 	"github.com/EventStore/EventStore-Client-Go/v4/esdb"
 	"github.com/ThreeDotsLabs/watermill"
