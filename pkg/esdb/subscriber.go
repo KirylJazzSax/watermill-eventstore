@@ -3,6 +3,8 @@ package esdb
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -18,7 +20,10 @@ type SubscriberConfig struct {
 }
 
 type SubscribeStreamConfig struct {
-	SubscribeToStreamOptions esdb.SubscribeToStreamOptions
+	SubscriptionGroup                        string
+	SubscribeToStreamOptions                 esdb.SubscribeToStreamOptions
+	SubscribeToPersistentSubscriptionOptions esdb.SubscribeToPersistentSubscriptionOptions
+	PersistentStreamSubscriptionOptions      esdb.PersistentStreamSubscriptionOptions
 }
 
 type Subscriber struct {
@@ -63,7 +68,114 @@ func NewSubscriber(config SubscriberConfig, logger watermill.LoggerAdapter) (*Su
 	}, nil
 }
 
-func (s *Subscriber) Subscribe(ctx context.Context, topic string) (<-chan *message.Message, error) {
+func (s *Subscriber) createPersistentSubscription(ctx context.Context, topic string) error {
+	err := s.client.CreatePersistentSubscription(
+		ctx,
+		topic,
+		s.config.StreamConfig.SubscriptionGroup,
+		s.config.StreamConfig.PersistentStreamSubscriptionOptions,
+	)
+
+	if err != nil {
+		if strings.Contains(err.Error(), "AlreadyExists") {
+			s.logger.Error("supscription already exists", err, watermill.LogFields{
+				"topic":              topic,
+				"subscription-group": s.config.StreamConfig.SubscriptionGroup,
+			})
+		} else {
+			s.logger.Error("can't create persistent subscription", err, watermill.LogFields{
+				"topic":              topic,
+				"subscription-group": s.config.StreamConfig.SubscriptionGroup,
+			})
+			return errors.New("can't create persistent subscription")
+		}
+	}
+
+	return nil
+}
+
+func (s *Subscriber) handlePersistentSubscription(ctx context.Context, topic string) (<-chan *message.Message, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	err := s.createPersistentSubscription(ctx, topic)
+
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+
+	stream, err := s.client.SubscribeToPersistentSubscription(
+		ctx,
+		topic,
+		s.config.StreamConfig.SubscriptionGroup,
+		s.config.StreamConfig.SubscribeToPersistentSubscriptionOptions,
+	)
+
+	if err != nil {
+		cancel()
+		s.logger.Error("can't subscribe to stream", err, watermill.LogFields{
+			"topic": topic,
+		})
+		return nil, errors.New("can't subscribe to stream")
+	}
+
+	out := make(chan *message.Message)
+	in := make(chan *esdb.ResolvedEvent)
+	s.subscriberWg.Add(1)
+
+	go func() {
+		defer func() {
+			stream.Close()
+			close(out)
+			cancel()
+			s.subscriberWg.Done()
+		}()
+		for {
+			select {
+			case <-s.closing:
+				return
+			case <-ctx.Done():
+				return
+			case event := <-in:
+				m, err := s.config.Marshaler.Unmarshal(event)
+				if err != nil {
+					s.logger.Error("couldn't unmarshal message", err, watermill.LogFields{
+						"event": event,
+					})
+
+					continue
+				}
+				if success := s.sendMessage(ctx, m, out); success {
+					stream.Ack(event)
+				} else {
+					stream.Nack(fmt.Sprintf("nack event %s", m.UUID), esdb.NackActionSkip, event)
+				}
+			}
+		}
+	}()
+
+	go func() {
+		defer close(in)
+		for {
+			event := stream.Recv()
+
+			if event.SubscriptionDropped != nil {
+				s.logger.Debug("subscription dropped", watermill.LogFields{
+					"event": event,
+					"topic": topic,
+				})
+				return
+			}
+
+			if event.EventAppeared != nil {
+				in <- event.EventAppeared.Event
+			}
+		}
+	}()
+
+	return out, nil
+}
+
+func (s *Subscriber) handleCatchUpSubscription(ctx context.Context, topic string) (<-chan *message.Message, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	stream, err := s.client.SubscribeToStream(ctx, topic, s.config.StreamConfig.SubscribeToStreamOptions)
 	if err != nil {
@@ -106,6 +218,7 @@ func (s *Subscriber) Subscribe(ctx context.Context, topic string) (<-chan *messa
 	s.subscriberWg.Add(1)
 
 	go func() {
+		defer close(in)
 		for {
 			event := stream.Recv()
 
@@ -126,11 +239,19 @@ func (s *Subscriber) Subscribe(ctx context.Context, topic string) (<-chan *messa
 	return out, nil
 }
 
+func (s *Subscriber) Subscribe(ctx context.Context, topic string) (<-chan *message.Message, error) {
+	if s.config.StreamConfig.SubscriptionGroup != "" {
+		return s.handlePersistentSubscription(ctx, topic)
+	}
+
+	return s.handleCatchUpSubscription(ctx, topic)
+}
+
 func (s *Subscriber) sendMessage(
 	ctx context.Context,
 	m *message.Message,
 	out chan *message.Message,
-) {
+) bool {
 	msgCtx, msgCancel := context.WithCancel(ctx)
 	m.SetContext(msgCtx)
 	defer msgCancel()
@@ -143,25 +264,25 @@ ResendLoop:
 			s.logger.Debug("closing subscriber", watermill.LogFields{
 				"message": m,
 			})
-			return
+			return false
 		case <-ctx.Done():
 			s.logger.Debug("done", watermill.LogFields{
 				"message": m,
 			})
-			return
+			return false
 		}
 
 		select {
 		case <-m.Acked():
-			break ResendLoop
+			return true
 		case <-m.Nacked():
 			m = m.Copy()
 			m.SetContext(msgCtx)
 			continue ResendLoop
 		case <-s.closing:
-			break ResendLoop
+			return false
 		case <-ctx.Done():
-			break ResendLoop
+			return false
 		}
 	}
 }
