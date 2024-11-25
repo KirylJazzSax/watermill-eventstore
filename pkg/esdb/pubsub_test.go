@@ -17,7 +17,7 @@ func createPubSub(t *testing.T) (message.Publisher, message.Subscriber) {
 		Login:    "ops",
 		Password: "changeit",
 	}
-	connectionString := "esdb://localhost:2113?tls=true&tlsVerifyCert=false"
+	connectionString := "esdb+discover://localhost:2113?tls=true&tlsVerifyCert=false"
 	marshaler := wesdb.DefaultMarshaler{}
 
 	pub, err := wesdb.NewPublisher(wesdb.PublisherConfig{
