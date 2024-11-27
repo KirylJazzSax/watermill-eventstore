@@ -17,7 +17,7 @@ func createPubSub(t *testing.T) (message.Publisher, message.Subscriber) {
 		Login:    "ops",
 		Password: "changeit",
 	}
-	connectionString := "esdb+discover://localhost:2113?tls=true&tlsVerifyCert=false"
+	connectionString := "esdb://localhost:2113?tls=false&tlsVerifyCert=false"
 	marshaler := wesdb.DefaultMarshaler{}
 
 	pub, err := wesdb.NewPublisher(wesdb.PublisherConfig{
@@ -57,7 +57,7 @@ func createPubSubPersistent(t *testing.T) (message.Publisher, message.Subscriber
 		Login:    "ops",
 		Password: "changeit",
 	}
-	connectionString := "esdb+discover://localhost:2113?tls=true&tlsVerifyCert=false"
+	connectionString := "esdb://localhost:2113?tls=false&tlsVerifyCert=false"
 	marshaler := wesdb.DefaultMarshaler{}
 
 	pub, err := wesdb.NewPublisher(wesdb.PublisherConfig{
@@ -106,7 +106,7 @@ func createPubSubPersistentWithConsumerGroups(t *testing.T, consumerGroups strin
 		Login:    "ops",
 		Password: "changeit",
 	}
-	connectionString := "esdb+discover://localhost:2113?tls=true&tlsVerifyCert=false"
+	connectionString := "esdb://localhost:2113?tls=false&tlsVerifyCert=false"
 	marshaler := wesdb.DefaultMarshaler{}
 
 	pub, err := wesdb.NewPublisher(wesdb.PublisherConfig{
