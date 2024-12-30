@@ -1,4 +1,5 @@
 up:
+	mkdir certs
 	docker compose up -d
 
 down:

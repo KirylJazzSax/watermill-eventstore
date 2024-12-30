@@ -12,12 +12,13 @@ import (
 	"github.com/google/uuid"
 )
 
+const connectionString = "esdb://localhost:2111,localhost:2112,localhost:2113?tls=true&tlsVerifyCert=false"
+
 func createPubSub(t *testing.T) (message.Publisher, message.Subscriber) {
 	credentials := &esdb.Credentials{
 		Login:    "ops",
 		Password: "changeit",
 	}
-	connectionString := "esdb://localhost:2113?tls=false&tlsVerifyCert=false"
 	marshaler := wesdb.DefaultMarshaler{}
 
 	pub, err := wesdb.NewPublisher(wesdb.PublisherConfig{
@@ -57,7 +58,6 @@ func createPubSubPersistent(t *testing.T) (message.Publisher, message.Subscriber
 		Login:    "ops",
 		Password: "changeit",
 	}
-	connectionString := "esdb://localhost:2113?tls=false&tlsVerifyCert=false"
 	marshaler := wesdb.DefaultMarshaler{}
 
 	pub, err := wesdb.NewPublisher(wesdb.PublisherConfig{
@@ -106,7 +106,6 @@ func createPubSubPersistentWithConsumerGroups(t *testing.T, consumerGroups strin
 		Login:    "ops",
 		Password: "changeit",
 	}
-	connectionString := "esdb://localhost:2113?tls=false&tlsVerifyCert=false"
 	marshaler := wesdb.DefaultMarshaler{}
 
 	pub, err := wesdb.NewPublisher(wesdb.PublisherConfig{
