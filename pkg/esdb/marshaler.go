@@ -8,6 +8,8 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 )
 
+// We should have an event type if we want to store a message. The default marshaller checks whether an event type is set in the metadata.
+// Additionally, EventStoreDB has its own event ID, so the Watermill message UUID is stored in the metadata.
 const (
 	DefaultMessageUUIDHeaderKey = "_watermill_message_uuid"
 	DefaultEventTypeKey         = "_watermill_event_type"

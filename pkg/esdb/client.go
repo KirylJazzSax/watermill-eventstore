@@ -7,7 +7,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill"
 )
 
-func NewClient(connectionString string, logger watermill.LoggerAdapter) (*esdb.Client, error) {
+func newClient(connectionString string, logger watermill.LoggerAdapter) (*esdb.Client, error) {
 	settings, err := esdb.ParseConnectionString(connectionString)
 
 	if err != nil {
