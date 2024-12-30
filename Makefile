@@ -27,6 +27,8 @@ test_reconnect:
 	go test -tags=reconnect ./...
 
 wait:
+	go run github.com/ThreeDotsLabs/wait-for@latest localhost:2111
+	go run github.com/ThreeDotsLabs/wait-for@latest localhost:2112
 	go run github.com/ThreeDotsLabs/wait-for@latest localhost:2113
 
 build:
