@@ -77,6 +77,7 @@ func TestUnmarshal(t *testing.T) {
 		Field string
 	}
 
-	json.Unmarshal(unmarshaledMessage.Payload, &unmarshaledBody)
+	err = json.Unmarshal(unmarshaledMessage.Payload, &unmarshaledBody)
+	require.NoError(t, err)
 	assert.Equal(t, data, unmarshaledBody)
 }
