@@ -33,7 +33,3 @@ and submit your pull request via GitHub.
 If you didn't find the answer to your question in [the documentation](https://watermill.io/), feel free to ask us directly!
 
 Please join us on the `#watermill` channel on the [Three Dots Labs Discord](https://discord.gg/QV6VFg4YQE).
-
-## License
-
-[MIT License](./LICENSE)
