@@ -9,41 +9,29 @@ import (
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/pubsub/tests"
-	"github.com/google/uuid"
+)
+
+// default login and password that set in eventstoredb
+const (
+	login    = "ops"
+	password = "changeit"
 )
 
 func createPubSub(t *testing.T) (message.Publisher, message.Subscriber) {
 	credentials := &esdb.Credentials{
-		Login:    "ops",
-		Password: "changeit",
+		Login:    login,
+		Password: password,
 	}
 	connectionString := "esdb://localhost:2113?tls=false&tlsVerifyCert=false"
-	marshaler := wesdb.DefaultMarshaler{}
+	config := wesdb.NewCatchUpConfig(connectionString, credentials, esdb.Start{})
 
-	pub, err := wesdb.NewPublisher(wesdb.PublisherConfig{
-		ConnectionString: connectionString,
-		Marshaler:        marshaler,
-		StreamConfig: wesdb.PublishStreamConfig{
-			Options: esdb.AppendToStreamOptions{
-				Authenticated: credentials,
-			},
-		},
-	}, watermill.NopLogger{})
+	pub, err := wesdb.NewPublisher(config, watermill.NopLogger{})
 
 	if err != nil {
 		panic(err)
 	}
 
-	sub, err := wesdb.NewSubscriber(wesdb.SubscriberConfig{
-		ConnectionString: connectionString,
-		Marshaler:        marshaler,
-		StreamConfig: wesdb.SubscribeStreamConfig{
-			SubscribeToStreamOptions: esdb.SubscribeToStreamOptions{
-				From:          esdb.Start{},
-				Authenticated: credentials,
-			},
-		},
-	}, watermill.NopLogger{})
+	sub, err := wesdb.NewSubscriber(config, watermill.NopLogger{})
 
 	if err != nil {
 		panic(err)
@@ -54,45 +42,24 @@ func createPubSub(t *testing.T) (message.Publisher, message.Subscriber) {
 
 func createPubSubPersistent(t *testing.T) (message.Publisher, message.Subscriber) {
 	credentials := &esdb.Credentials{
-		Login:    "ops",
-		Password: "changeit",
+		Login:    login,
+		Password: password,
 	}
 	connectionString := "esdb://localhost:2113?tls=false&tlsVerifyCert=false"
-	marshaler := wesdb.DefaultMarshaler{}
 
-	pub, err := wesdb.NewPublisher(wesdb.PublisherConfig{
-		ConnectionString: connectionString,
-		Marshaler:        marshaler,
-		StreamConfig: wesdb.PublishStreamConfig{
-			Options: esdb.AppendToStreamOptions{
-				Authenticated: credentials,
-			},
-		},
-	}, watermill.NopLogger{})
+	config, err := wesdb.NewPersistentSubscriptionConfig(connectionString, credentials, esdb.Start{})
 
 	if err != nil {
 		panic(err)
 	}
 
-	u, err := uuid.NewUUID()
+	pub, err := wesdb.NewPublisher(config, watermill.NopLogger{})
+
 	if err != nil {
 		panic(err)
 	}
-	subGroup := u.String()
-	sub, err := wesdb.NewSubscriber(wesdb.SubscriberConfig{
-		ConnectionString: connectionString,
-		Marshaler:        marshaler,
-		StreamConfig: wesdb.SubscribeStreamConfig{
-			SubscriptionGroup: subGroup,
-			SubscribeToPersistentSubscriptionOptions: esdb.SubscribeToPersistentSubscriptionOptions{
-				Authenticated: credentials,
-			},
-			PersistentStreamSubscriptionOptions: esdb.PersistentStreamSubscriptionOptions{
-				StartFrom:     esdb.Start{},
-				Authenticated: credentials,
-			},
-		},
-	}, watermill.NopLogger{})
+
+	sub, err := wesdb.NewSubscriber(config, watermill.NopLogger{})
 
 	if err != nil {
 		panic(err)
@@ -103,41 +70,24 @@ func createPubSubPersistent(t *testing.T) (message.Publisher, message.Subscriber
 
 func createPubSubPersistentWithConsumerGroups(t *testing.T, consumerGroups string) (message.Publisher, message.Subscriber) {
 	credentials := &esdb.Credentials{
-		Login:    "ops",
-		Password: "changeit",
+		Login:    login,
+		Password: password,
 	}
 	connectionString := "esdb://localhost:2113?tls=false&tlsVerifyCert=false"
-	marshaler := wesdb.DefaultMarshaler{}
+	config := wesdb.NewPersistentSubscriptionConsumerGroupConfig(
+		connectionString,
+		consumerGroups,
+		credentials,
+		esdb.Start{},
+	)
 
-	pub, err := wesdb.NewPublisher(wesdb.PublisherConfig{
-		ConnectionString: connectionString,
-		Marshaler:        marshaler,
-		StreamConfig: wesdb.PublishStreamConfig{
-			Options: esdb.AppendToStreamOptions{
-				Authenticated:    credentials,
-				ExpectedRevision: esdb.Any{},
-			},
-		},
-	}, watermill.NopLogger{})
+	pub, err := wesdb.NewPublisher(config, watermill.NopLogger{})
 
 	if err != nil {
 		panic(err)
 	}
 
-	sub, err := wesdb.NewSubscriber(wesdb.SubscriberConfig{
-		ConnectionString: connectionString,
-		Marshaler:        marshaler,
-		StreamConfig: wesdb.SubscribeStreamConfig{
-			SubscriptionGroup: consumerGroups,
-			SubscribeToPersistentSubscriptionOptions: esdb.SubscribeToPersistentSubscriptionOptions{
-				Authenticated: credentials,
-			},
-			PersistentStreamSubscriptionOptions: esdb.PersistentStreamSubscriptionOptions{
-				StartFrom:     esdb.Start{},
-				Authenticated: credentials,
-			},
-		},
-	}, watermill.NopLogger{})
+	sub, err := wesdb.NewSubscriber(config, watermill.NopLogger{})
 
 	if err != nil {
 		panic(err)

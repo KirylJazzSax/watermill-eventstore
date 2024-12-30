@@ -10,23 +10,13 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 )
 
-type PublisherConfig struct {
-	ConnectionString string
-	StreamConfig     PublishStreamConfig
-	Marshaler        Marshaler
-}
-
-type PublishStreamConfig struct {
-	Options esdb.AppendToStreamOptions
-}
-
 type Publisher struct {
 	client *esdb.Client
-	config PublisherConfig
+	config Config
 }
 
-func NewPublisher(config PublisherConfig, logger watermill.LoggerAdapter) (*Publisher, error) {
-	db, err := NewClient(config.ConnectionString, logger)
+func NewPublisher(config Config, logger watermill.LoggerAdapter) (*Publisher, error) {
+	db, err := newClient(config.ConnectionString, logger)
 	if err != nil {
 		logger.Error("conldn't connect to client", err, watermill.LogFields{
 			"connectionString": config.ConnectionString,
@@ -50,7 +40,7 @@ func (p *Publisher) Publish(stream string, messages ...*message.Message) (err er
 		_, err = p.client.AppendToStream(
 			context.Background(),
 			stream,
-			p.config.StreamConfig.Options,
+			p.config.Publisher.Options,
 			eventData,
 		)
 

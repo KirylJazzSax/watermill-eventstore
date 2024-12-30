@@ -13,30 +13,17 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 )
 
-type SubscriberConfig struct {
-	ConnectionString string
-	StreamConfig     SubscribeStreamConfig
-	Marshaler        Marshaler
-}
-
-type SubscribeStreamConfig struct {
-	SubscriptionGroup                        string
-	SubscribeToStreamOptions                 esdb.SubscribeToStreamOptions
-	SubscribeToPersistentSubscriptionOptions esdb.SubscribeToPersistentSubscriptionOptions
-	PersistentStreamSubscriptionOptions      esdb.PersistentStreamSubscriptionOptions
-}
-
 type Subscriber struct {
 	client       *esdb.Client
-	config       SubscriberConfig
+	config       Config
 	subscriberWg *sync.WaitGroup
 	logger       watermill.LoggerAdapter
 	closing      chan struct{}
 	closeFunc    func() error
 }
 
-func NewSubscriber(config SubscriberConfig, logger watermill.LoggerAdapter) (*Subscriber, error) {
-	client, err := NewClient(config.ConnectionString, logger)
+func NewSubscriber(config Config, logger watermill.LoggerAdapter) (*Subscriber, error) {
+	client, err := newClient(config.ConnectionString, logger)
 	if err != nil {
 		logger.Error("conldn't connect to client", err, watermill.LogFields{
 			"connectionString": config.ConnectionString,
@@ -72,20 +59,20 @@ func (s *Subscriber) createPersistentSubscription(ctx context.Context, topic str
 	err := s.client.CreatePersistentSubscription(
 		ctx,
 		topic,
-		s.config.StreamConfig.SubscriptionGroup,
-		s.config.StreamConfig.PersistentStreamSubscriptionOptions,
+		s.config.Subscriber.SubscriptionGroup,
+		s.config.Subscriber.PersistentStreamSubscriptionOptions,
 	)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "AlreadyExists") {
-			s.logger.Error("supscription already exists", err, watermill.LogFields{
+			s.logger.Info("supscription already exists", watermill.LogFields{
 				"topic":              topic,
-				"subscription-group": s.config.StreamConfig.SubscriptionGroup,
+				"subscription-group": s.config.Subscriber.SubscriptionGroup,
 			})
 		} else {
 			s.logger.Error("can't create persistent subscription", err, watermill.LogFields{
 				"topic":              topic,
-				"subscription-group": s.config.StreamConfig.SubscriptionGroup,
+				"subscription-group": s.config.Subscriber.SubscriptionGroup,
 			})
 			return errors.New("can't create persistent subscription")
 		}
@@ -106,8 +93,8 @@ func (s *Subscriber) handlePersistentSubscription(ctx context.Context, topic str
 	stream, err := s.client.SubscribeToPersistentSubscription(
 		ctx,
 		topic,
-		s.config.StreamConfig.SubscriptionGroup,
-		s.config.StreamConfig.SubscribeToPersistentSubscriptionOptions,
+		s.config.Subscriber.SubscriptionGroup,
+		s.config.Subscriber.SubscribeToPersistentSubscriptionOptions,
 	)
 
 	if err != nil {
@@ -187,7 +174,7 @@ func (s *Subscriber) handlePersistentSubscription(ctx context.Context, topic str
 
 func (s *Subscriber) handleCatchUpSubscription(ctx context.Context, topic string) (<-chan *message.Message, error) {
 	ctx, cancel := context.WithCancel(ctx)
-	stream, err := s.client.SubscribeToStream(ctx, topic, s.config.StreamConfig.SubscribeToStreamOptions)
+	stream, err := s.client.SubscribeToStream(ctx, topic, s.config.Subscriber.SubscribeToStreamOptions)
 	if err != nil {
 		cancel()
 		s.logger.Error("can't subscribe to stream", err, watermill.LogFields{
@@ -250,7 +237,7 @@ func (s *Subscriber) handleCatchUpSubscription(ctx context.Context, topic string
 }
 
 func (s *Subscriber) Subscribe(ctx context.Context, topic string) (<-chan *message.Message, error) {
-	if s.config.StreamConfig.SubscriptionGroup != "" {
+	if s.config.Subscriber.SubscriptionGroup != "" {
 		return s.handlePersistentSubscription(ctx, topic)
 	}
 
