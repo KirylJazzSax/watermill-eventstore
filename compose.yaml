@@ -1,12 +1,10 @@
-version: "3.5"
-
 services:
   setup:
     image: eventstore/es-gencert-cli:1.0.2
     entrypoint: bash
     user: "1000:1000"
     command: >
-      -c "mkdir -p ./certs && cd /certs
+      -c "cd /certs
       && es-gencert-cli create-ca
       && es-gencert-cli create-node -out ./node1 -ip-addresses 127.0.0.1,172.30.240.11 -dns-names localhost
       && es-gencert-cli create-node -out ./node2 -ip-addresses 127.0.0.1,172.30.240.12 -dns-names localhost
