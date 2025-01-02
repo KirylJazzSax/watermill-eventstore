@@ -17,21 +17,22 @@ const (
 	password = "changeit"
 )
 
+const connectionString = "esdb://localhost:2111,localhost:2112,localhost:2113?tls=true&tlsVerifyCert=false"
+
 func createPubSub(t *testing.T) (message.Publisher, message.Subscriber) {
 	credentials := &esdb.Credentials{
 		Login:    login,
 		Password: password,
 	}
-	connectionString := "esdb://localhost:2113?tls=false&tlsVerifyCert=false"
 	config := wesdb.NewCatchUpConfig(connectionString, credentials, esdb.Start{})
 
-	pub, err := wesdb.NewPublisher(config, watermill.NopLogger{})
+	pub, err := wesdb.NewPublisher(config, watermill.NewStdLogger(true, true))
 
 	if err != nil {
 		panic(err)
 	}
 
-	sub, err := wesdb.NewSubscriber(config, watermill.NopLogger{})
+	sub, err := wesdb.NewSubscriber(config, watermill.NewStdLogger(true, true))
 
 	if err != nil {
 		panic(err)
@@ -45,7 +46,6 @@ func createPubSubPersistent(t *testing.T) (message.Publisher, message.Subscriber
 		Login:    login,
 		Password: password,
 	}
-	connectionString := "esdb://localhost:2113?tls=false&tlsVerifyCert=false"
 
 	config, err := wesdb.NewPersistentSubscriptionConfig(connectionString, credentials, esdb.Start{})
 
@@ -53,13 +53,13 @@ func createPubSubPersistent(t *testing.T) (message.Publisher, message.Subscriber
 		panic(err)
 	}
 
-	pub, err := wesdb.NewPublisher(config, watermill.NopLogger{})
+	pub, err := wesdb.NewPublisher(config, watermill.NewStdLogger(true, true))
 
 	if err != nil {
 		panic(err)
 	}
 
-	sub, err := wesdb.NewSubscriber(config, watermill.NopLogger{})
+	sub, err := wesdb.NewSubscriber(config, watermill.NewStdLogger(true, true))
 
 	if err != nil {
 		panic(err)
@@ -73,7 +73,6 @@ func createPubSubPersistentWithConsumerGroups(t *testing.T, consumerGroups strin
 		Login:    login,
 		Password: password,
 	}
-	connectionString := "esdb://localhost:2113?tls=false&tlsVerifyCert=false"
 	config := wesdb.NewPersistentSubscriptionConsumerGroupConfig(
 		connectionString,
 		consumerGroups,
@@ -81,13 +80,13 @@ func createPubSubPersistentWithConsumerGroups(t *testing.T, consumerGroups strin
 		esdb.Start{},
 	)
 
-	pub, err := wesdb.NewPublisher(config, watermill.NopLogger{})
+	pub, err := wesdb.NewPublisher(config, watermill.NewStdLogger(true, true))
 
 	if err != nil {
 		panic(err)
 	}
 
-	sub, err := wesdb.NewSubscriber(config, watermill.NopLogger{})
+	sub, err := wesdb.NewSubscriber(config, watermill.NewStdLogger(true, true))
 
 	if err != nil {
 		panic(err)
