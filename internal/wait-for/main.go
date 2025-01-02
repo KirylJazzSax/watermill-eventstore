@@ -22,7 +22,7 @@ func main() {
 	for {
 		_, err := client.ListAllPersistentSubscriptions(context.TODO(), esdb.ListPersistentSubscriptionsOptions{
 			Authenticated: &esdb.Credentials{
-				Login:    "admin",
+				Login:    "ops",
 				Password: "changeit",
 			},
 		})
