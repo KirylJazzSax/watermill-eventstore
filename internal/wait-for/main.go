@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	settings, err := esdb.ParseConnectionString("esdb://localhost:2111,localhost:2112,localhost:2113?tls=true&tlsVerifyCert=false")
+	settings, err := esdb.ParseConnectionString("esdb+discover://localhost?tls=true&tlsVerifyCert=false")
 	if err != nil {
 		panic(err)
 	}
