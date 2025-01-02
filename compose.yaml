@@ -15,13 +15,13 @@ services:
       - ./certs:/certs
 
   node1.eventstore: &template
-    image: eventstore/eventstore:24.2.0-jammy
+    image: eventstore/eventstore:latest
     container_name: node1.eventstore
     env_file:
       - vars.env
     environment:
-      - EVENTSTORE_INT_IP=172.30.240.11
-      - EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS=2111
+      - EVENTSTORE_REPLICATION_IP=172.30.240.11
+      - EVENTSTORE_ADVERTISE_NODE_PORT_TO_CLIENT_AS=2111
       - EVENTSTORE_GOSSIP_SEED=172.30.240.12:2113,172.30.240.13:2113
       - EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH=/certs/ca
       - EVENTSTORE_CERTIFICATE_FILE=/certs/node1/node.crt
@@ -52,8 +52,8 @@ services:
     env_file:
       - vars.env
     environment:
-      - EVENTSTORE_INT_IP=172.30.240.12
-      - EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS=2112
+      - EVENTSTORE_REPLICATION_IP=172.30.240.12
+      - EVENTSTORE_ADVERTISE_NODE_PORT_TO_CLIENT_AS=2112
       - EVENTSTORE_GOSSIP_SEED=172.30.240.11:2113,172.30.240.13:2113
       - EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH=/certs/ca
       - EVENTSTORE_CERTIFICATE_FILE=/certs/node2/node.crt
@@ -77,8 +77,8 @@ services:
     <<: *template
     container_name: node3.eventstore
     environment:
-      - EVENTSTORE_INT_IP=172.30.240.13
-      - EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS=2113
+      - EVENTSTORE_REPLICATION_IP=172.30.240.13
+      - EVENTSTORE_ADVERTISE_NODE_PORT_TO_CLIENT_AS=2113
       - EVENTSTORE_GOSSIP_SEED=172.30.240.11:2113,172.30.240.12:2113
       - EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH=/certs/ca
       - EVENTSTORE_CERTIFICATE_FILE=/certs/node3/node.crt
