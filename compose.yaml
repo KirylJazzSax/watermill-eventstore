@@ -26,7 +26,7 @@ services:
   esdb-node1:
     image: eventstore/eventstore:latest
     env_file:
-      - shared.env
+      - vars.env
     environment:
       - EVENTSTORE_GOSSIP_SEED=172.30.240.12:2113,172.30.240.13:2113
       - EVENTSTORE_REPLICATION_IP=172.30.240.11
@@ -47,7 +47,7 @@ services:
   esdb-node2:
     image: eventstore/eventstore:latest
     env_file:
-      - shared.env
+      - vars.env
     environment:
       - EVENTSTORE_GOSSIP_SEED=172.30.240.11:2113,172.30.240.13:2113
       - EVENTSTORE_REPLICATION_IP=172.30.240.12
@@ -68,7 +68,7 @@ services:
   esdb-node3:
     image: eventstore/eventstore:latest
     env_file:
-      - shared.env
+      - vars.env
     environment:
       - EVENTSTORE_GOSSIP_SEED=172.30.240.11:2113,172.30.240.12:2113
       - EVENTSTORE_REPLICATION_IP=172.30.240.13
