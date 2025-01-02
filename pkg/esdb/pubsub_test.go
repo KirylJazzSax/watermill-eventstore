@@ -17,7 +17,7 @@ const (
 	password = "changeit"
 )
 
-const connectionString = "esdb://localhost:2111,localhost:2112,localhost:2113?tls=true&tlsVerifyCert=false"
+const connectionString = "esdb://0.0.0.0:2111,0.0.0.0:2112,0.0.0.0:2113?tls=true&tlsVerifyCert=false"
 
 func createPubSub(t *testing.T) (message.Publisher, message.Subscriber) {
 	credentials := &esdb.Credentials{
