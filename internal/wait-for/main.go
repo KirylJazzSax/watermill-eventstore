@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/EventStore/EventStore-Client-Go/v4/esdb"
@@ -29,7 +30,7 @@ func main() {
 
 		fmt.Println(err)
 
-		if err == nil {
+		if err == nil || strings.Contains(err.Error(), "failed to verify certificate") {
 			break
 		}
 
